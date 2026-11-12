@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 326 86" width="326" height="86" role="img" aria-label="Built for phones: Bottom tab bar, buy bar">
+
+
+<rect x="0.5" y="0.5" width="325" height="85" rx="12" fill="#ffffff" stroke="#d0d7de"/>
+<g transform="translate(44,43)"><path d="M-8 -13 H8 Q10 -13 10 -11 V11 Q10 13 8 13 H-8 Q-10 13 -10 11 V-11 Q-10 -13 -8 -13 Z M-3 9 H3" fill="none" stroke="#afb8c1" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/><circle r="2.4" fill="#d6103a"><animate attributeName="opacity" values="1;0.2;1" dur="3s" repeatCount="indefinite"/></circle></g>
+<text x="88" y="38" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif" font-size="16" font-weight="600" fill="#1f2328">Built for phones</text>
+<text x="88" y="59" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif" font-size="12.5" fill="#59636e">Bottom tab bar, buy bar</text>
+</svg>
