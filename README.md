@@ -1,4 +1,10 @@
+<p align="center"><img src="docs/media/banner.gif" alt="Shonowear: 3D banner showing gallery, size guide, colours, bundles, delivery estimate and waitlist" width="720"></p>
+
 # Shonowear: shop + style assistant
+
+<p align="center"><img src="docs/media/tour.gif" alt="Screen recording: home page, product page, size finder, quick view, collections and bag" width="720"></p>
+
+> The animations above are recordings of the real shop with placeholder photos. Re-make them with `node scripts/record-media.mjs` (needs ffmpeg). Full-quality WebM versions are in `docs/media/`.
 
 A complete small online shop for India. React + Vite frontend, Vercel serverless API, **Razorpay** payments, **Upstash Redis** for orders and stock, **Resend** for emails.
 
