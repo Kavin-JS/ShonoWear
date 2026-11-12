@@ -1,0 +1,32 @@
+{
+  "name": "shonowear-store",
+  "version": "3.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && node scripts/gen-sitemap.mjs",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "check:catalog": "node scripts/check-catalog.mjs",
+    "check:launch": "node scripts/check-launch.mjs",
+    "verify": "npm test && npm run check:catalog && npm run build",
+    "build:pages": "vite build && node scripts/gen-sitemap.mjs && cp dist/index.html dist/404.html",
+    "e2e": "node e2e/run.mjs && node e2e/sectionA.mjs",
+    "dev:api": "node scripts/dev-server.mjs",
+    "serve": "node scripts/dev-server.mjs"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.26.2",
+    "three": "0.169.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.1",
+    "vite": "^5.4.8",
+    "vitest": "^2.1.9"
+  },
+  "engines": {
+    "node": "20.x"
+  }
+}
