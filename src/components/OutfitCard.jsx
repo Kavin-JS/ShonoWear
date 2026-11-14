@@ -103,7 +103,7 @@ export default function OutfitCard({ product, animationDelay = 0 }) {
 
         {/* Brand + name */}
         <div>
-          <div style={{ fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--red)', marginBottom: '3px' }}>
+          <div style={{ fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--red-text)', marginBottom: '3px' }}>
             {product.brand}
           </div>
           <div style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text)', lineHeight: 1.3 }}>

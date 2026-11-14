@@ -11,6 +11,14 @@ import { collections } from '../data/collections.js';
 import { STORE } from '../data/storeConfig.js';
 import { CATEGORY_LABELS } from '../lib/shopFilters.js';
 import { inr } from '../lib/store.js';
+import { saleFor } from '../lib/offers.js';
+import InstagramStrip from '../components/InstagramStrip.jsx';
+import { Countdown } from '../components/Price.jsx';
+import { useT } from '../i18n/index.jsx';
+import Reveal from '../components/Reveal.jsx';
+import { LookCard } from './Looks.jsx';
+import { activeLooks } from '../lib/looks.js';
+import Img from '../components/Img.jsx';
 
 // Sign-ups go to our own /api/subscribe (Mailchimp or Resend, see README).
 const FORM_ENDPOINT = '/api/subscribe';
@@ -55,7 +63,7 @@ function EmailCapture() {
         border: '1px solid rgba(232,21,58,0.3)', borderRadius: '4px',
         fontSize: '13px', color: 'var(--text)',
       }}>
-        <span style={{ color: 'var(--red)' }}>✓</span>{' '}
+        <span style={{ color: 'var(--red-text)' }}>✓</span>{' '}
         {needsConfirm ? 'Almost done — check your inbox and confirm your email.' : "You're on the list — we'll be in touch."}
       </div>
     );
@@ -137,7 +145,7 @@ function Banner() {
                 <p style={{ fontSize: 'clamp(14px, 1.6vw, 17px)', opacity: .9, maxWidth: 440, marginBottom: 24, lineHeight: 1.6 }}>{s.text}</p>
                 <Link to={s.to} className="btn-primary" style={{ background: '#fff', color: '#14141f', borderColor: '#fff' }}>{s.cta} <Chevron /></Link>
               </div>
-              <img src={s.img} alt="" className="banner-img" loading={k ? 'lazy' : 'eager'} />
+              <Img src={s.img} className="banner-img" priority={!k} sizes="100vw" widths={[640, 960, 1280, 1600]} />
             </div>
           </div>
         ))}
@@ -172,7 +180,11 @@ const TRUST = [
 ];
 
 export default function Home() {
+  const t = useT();
+  const homeLooks = activeLooks().slice(0, 3);
   const featured = catalog.slice(0, 10);
+  const onSale = catalog.filter(p => saleFor(p));
+  const sale = onSale.length ? saleFor(onSale[0]) : null;
   const under = [...catalog].filter(p => p.price <= 1000).sort((a, b) => a.price - b.price).slice(0, 10);
   const own = catalog.filter(p => p.fulfilment === 'own');
   const cats = Object.entries(CATEGORY_LABELS).map(([k, label]) => [k, label, (catalog.find(p => p.category === k) || {}).image]);
@@ -186,7 +198,7 @@ export default function Home() {
           {cats.map(([k, label, img]) => (
             <Link key={k} to={`/shop?cat=${k}`} style={{ textAlign: 'center', width: 86 }}>
               <span style={{ display: 'block', width: 76, height: 76, margin: '0 auto 8px', borderRadius: '50%', overflow: 'hidden', background: 'var(--bg3)', border: '2px solid var(--border)' }}>
-                {img && <img src={img} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                {img && <Img src={img} sizes="(max-width: 600px) 50vw, 280px" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
               </span>
               <span style={{ fontSize: 12, fontWeight: 500 }}>{label}</span>
             </Link>
@@ -195,19 +207,20 @@ export default function Home() {
       </section>
 
       <RecentlyViewed />
-      <Rail title="Featured" hint="Hand-picked from the catalogue" to="/shop" items={featured} />
+      {sale && <Rail title="⚡ Flash sale" hint={<Countdown endsAt={sale.endsAt} prefix="Ends in " />} to="/collection/flash-sale" items={onSale} />}
+      <Rail title={t('Featured')} hint="Hand-picked from the catalogue" to="/shop" items={featured} />
       {own.length > 0 && <Rail title="Ships from us" hint={`Delivered in ${STORE.deliveryEstimate}`} to="/shop?platform=Shonowear" items={own} />}
       <Rail title="Under ₹1,000" to="/shop?max=1000" items={under} />
 
       <section className="container" style={{ marginTop: 44 }} aria-label="Collections">
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 14 }}>
-          <h2 className="section-title" style={{ fontFamily: 'var(--font-body)' }}>Collections</h2>
-          <Link to="/collections" style={{ fontSize: 13, fontWeight: 600, color: 'var(--red)' }}>View all</Link>
+          <h2 className="section-title" style={{ fontFamily: 'var(--font-body)' }}>{t('Collections')}</h2>
+          <Link to="/collections" style={{ fontSize: 13, fontWeight: 600, color: 'var(--red-text)' }}>{t('View all')}</Link>
         </div>
         <div className="rail hide-scroll">
           {collections.map(c => ({ c, items: catalog.filter(c.match) })).filter(x => x.items.length).map(({ c, items }) => (
             <Link key={c.slug} to={`/collection/${c.slug}`} style={{ width: 200, position: 'relative', aspectRatio: '4 / 5', borderRadius: 16, overflow: 'hidden', background: 'var(--bg3)', color: '#fff', display: 'block' }}>
-              <img src={items[0].image} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <Img src={items[0].image} sizes="(max-width: 600px) 50vw, 280px" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               <span style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,.75), rgba(0,0,0,.05) 60%)' }} />
               <span style={{ position: 'absolute', left: 14, bottom: 12, right: 12, fontWeight: 700, fontSize: 16 }}>{c.title}</span>
             </Link>
@@ -215,27 +228,39 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="container" style={{ marginTop: 44 }} aria-label="Shop by occasion">
-        <h2 className="section-title" style={{ fontFamily: 'var(--font-body)', marginBottom: 14 }}>Shop by occasion</h2>
+      {homeLooks.length > 0 && (
+        <Reveal as="section" className="container" style={{ marginTop: 44 }} aria-label="Shop the look">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 14 }}>
+            <h2 className="section-title" style={{ fontFamily: 'var(--font-body)' }}>Shop the look</h2>
+            <Link to="/looks" style={{ fontSize: 13 }}>{t('View all')}</Link>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 14 }}>
+            {homeLooks.map(l => <LookCard key={l.slug} look={l} />)}
+          </div>
+        </Reveal>
+      )}
+
+      <Reveal as="section" className="container" style={{ marginTop: 44 }} aria-label="Shop by occasion">
+        <h2 className="section-title" style={{ fontFamily: 'var(--font-body)', marginBottom: 14 }}>{t('Shop by occasion')}</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 14 }}>
           {OCCASIONS.map(([k, label, fn]) => (
             <Link key={k} to={`/shop?occasion=${k}`} style={{ position: 'relative', aspectRatio: '4 / 3', borderRadius: 16, overflow: 'hidden', background: 'var(--bg3)', color: '#fff', display: 'block' }}>
-              <img src={pickImg(fn)} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <Img src={pickImg(fn)} sizes="(max-width: 600px) 50vw, 280px" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               <span style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,.72), rgba(0,0,0,.05) 60%)' }} />
-              <span style={{ position: 'absolute', left: 16, bottom: 14, fontWeight: 700, fontSize: 17 }}>{label}<br /><span style={{ fontSize: 12, fontWeight: 500, opacity: .85 }}>Shop now →</span></span>
+              <span style={{ position: 'absolute', left: 16, bottom: 14, fontWeight: 700, fontSize: 17 }}>{label}<br /><span style={{ fontSize: 12, fontWeight: 500, opacity: .85 }}>{t('Shop now →')}</span></span>
             </Link>
           ))}
         </div>
-      </section>
+      </Reveal>
 
       <section className="container" style={{ marginTop: 44 }} aria-label="AI stylist">
         <div style={{ borderRadius: 20, background: 'linear-gradient(120deg,#0b0b14,#2a0f2a 70%,#4a0f24)', color: '#fff', padding: 'clamp(24px, 5vw, 48px)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24, flexWrap: 'wrap' }}>
           <div style={{ maxWidth: 560 }}>
-            <div style={{ fontSize: 12, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#ff7a93', fontWeight: 600, marginBottom: 10 }}>✦ Not sure what to wear?</div>
-            <h2 style={{ fontSize: 'clamp(34px, 5vw, 56px)', marginBottom: 12 }}>Let the stylist build it for you</h2>
+            <div style={{ fontSize: 12, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#ff7a93', fontWeight: 600, marginBottom: 10 }}>{t('✦ Not sure what to wear?')}</div>
+            <h2 style={{ fontSize: 'clamp(34px, 5vw, 56px)', marginBottom: 12 }}>{t('Let the stylist build it for you')}</h2>
             <p style={{ opacity: .85, lineHeight: 1.7, fontSize: 14 }}>Four complete outfits matched to your build, skin tone, occasion and budget. Photos never leave your device. Or just chat with Shono, the assistant in the corner.</p>
           </div>
-          <Link to="/upload" className="btn-primary" style={{ background: '#fff', color: '#14141f', borderColor: '#fff' }}>Get my outfits — free</Link>
+          <Link to="/upload" className="btn-primary" style={{ background: '#fff', color: '#14141f', borderColor: '#fff' }}>{t('Get my outfits — free')}</Link>
         </div>
       </section>
 
@@ -243,7 +268,7 @@ export default function Home() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14 }}>
           {TRUST.map(([icon, t, d]) => (
             <div key={t} style={{ display: 'flex', gap: 14, alignItems: 'center', padding: '16px 18px', border: '1px solid var(--border)', borderRadius: 14, background: 'var(--bg2)' }}>
-              <span style={{ color: 'var(--red)' }}>{icon}</span>
+              <span style={{ color: 'var(--red-text)' }}>{icon}</span>
               <span style={{ fontSize: 13, lineHeight: 1.4 }}><strong style={{ display: 'block', fontSize: 14 }}>{t}</strong><span style={{ color: 'var(--muted)' }}>{d}</span></span>
             </div>
           ))}
@@ -257,6 +282,7 @@ export default function Home() {
           <div style={{ maxWidth: 480, margin: '0 auto' }}><EmailCapture /></div>
         </div>
       </section>
+      <div style={{ marginBottom: 40 }}><InstagramStrip /></div>
     </main>
   );
 }

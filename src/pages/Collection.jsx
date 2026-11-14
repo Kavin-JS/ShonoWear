@@ -5,6 +5,7 @@ import { collections } from '../data/collections.js';
 import ProductCard from '../components/ProductCard.jsx';
 import NotFound from './NotFound.jsx';
 import { SORTS, filterProducts, parseFilters } from '../lib/shopFilters.js';
+import Img from '../components/Img.jsx';
 
 export const productsIn = (c) => c.match ? catalog.filter(c.match) : [];
 
@@ -18,7 +19,7 @@ export function Collections() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 14 }}>
           {list.map(({ c, items }) => (
             <Link key={c.slug} to={`/collection/${c.slug}`} style={{ position: 'relative', aspectRatio: '4 / 3', borderRadius: 16, overflow: 'hidden', background: 'var(--bg3)', color: '#fff', display: 'block' }}>
-              <img src={items[0].image} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <Img src={items[0].image} sizes="(max-width: 600px) 50vw, 280px" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               <span style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,.75), rgba(0,0,0,.05) 65%)' }} />
               <span style={{ position: 'absolute', left: 16, bottom: 14, right: 16, fontWeight: 700, fontSize: 18 }}>{c.title}<br /><span style={{ fontSize: 12, fontWeight: 500, opacity: .85 }}>{items.length} item{items.length === 1 ? '' : 's'}</span></span>
             </Link>
@@ -55,7 +56,7 @@ export default function Collection() {
           </select>
         </div>
         <div className="product-grid">{items.map((p, i) => <ProductCard key={p.id} product={p} delay={Math.min(i, 8) * 0.03} />)}</div>
-        <p style={{ marginTop: 28 }}><Link to="/shop" style={{ color: 'var(--red)', fontWeight: 600, fontSize: 14 }}>Browse everything →</Link></p>
+        <p style={{ marginTop: 28 }}><Link to="/shop" style={{ color: 'var(--red-text)', fontWeight: 600, fontSize: 14 }}>Browse everything →</Link></p>
       </div>
     </main>
   );

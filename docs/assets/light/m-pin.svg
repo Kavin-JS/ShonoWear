@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 326 86" width="326" height="86" role="img" aria-label="Delivery estimate: Pincode check, business days">
+
+
+<rect x="0.5" y="0.5" width="325" height="85" rx="12" fill="#ffffff" stroke="#d0d7de"/>
+<g transform="translate(44,43)"><path d="M0 -13 C8 -13 12 -7 12 -2 C12 6 0 14 0 14 C0 14 -12 6 -12 -2 C-12 -7 -8 -13 0 -13 Z" fill="none" stroke="#afb8c1" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/><circle r="2.4" fill="#d6103a"><animate attributeName="opacity" values="1;0.2;1" dur="3s" repeatCount="indefinite"/></circle></g>
+<text x="88" y="38" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif" font-size="16" font-weight="600" fill="#1f2328">Delivery estimate</text>
+<text x="88" y="59" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif" font-size="12.5" fill="#59636e">Pincode check, business days</text>
+</svg>

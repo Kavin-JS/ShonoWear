@@ -14,6 +14,7 @@
 import { catalog } from '../src/data/catalog.js';
 import { STORE } from '../src/data/storeConfig.js';
 import { store } from './guard.js';
+import { refreshOverrides } from './overrides.js';
 
 const products = new Map(catalog.map(p => [p.id, p]));
 // sold units live in a hash {orderId: qty}: writing the same order twice changes nothing, so a retry is always safe.
@@ -30,6 +31,7 @@ export const totalStock = (id, size) => {
 };
 
 export async function reserve(orderId, lines, now = Date.now()) {
+  await refreshOverrides({ force: true });   // an edit to stock in /admin applies before anyone can reserve
   const expiresAt = now + STORE.holdMinutes * 60_000;
   const taken = [];
 
@@ -79,8 +81,14 @@ export async function commit(orderId, lines) {
   return { oversold };
 }
 
+/** A COD order that was cancelled or refused: its units go back on sale. Idempotent. */
+export async function uncommit(orderId, lines) {
+  await Promise.all(lines.map(l => store([['HDEL', soldKey(l.id, l.size), orderId]]).catch(() => {})));
+}
+
 /** { productId: { size: unitsAvailableNow } } for own products. */
 export async function availability(ids, now = Date.now()) {
+  await refreshOverrides();
   const out = {};
   const wanted = [...new Set(ids)].map(id => products.get(id)).filter(p => p?.fulfilment === 'own');
   const cmds = [];
@@ -99,4 +107,11 @@ export async function availability(ids, now = Date.now()) {
     (out[p.id] ??= {})[size] = Math.max(0, totalStock(p.id, size) - sold - held);
   });
   return out;
+}
+
+/** One size, for the admin: total (after edits), sold, held and what is left. */
+export async function stockRow(id, size, now = Date.now()) {
+  const [sold, held] = await store([['HVALS', soldKey(id, size)], ['ZRANGEBYSCORE', holdKey(id, size), now, '+inf']]);
+  const total = totalStock(id, size), s = sum(sold), h = (held || []).reduce((n, m) => n + qtyOf(m), 0);
+  return { size, total, sold: s, held: h, available: Math.max(0, total - s - h) };
 }

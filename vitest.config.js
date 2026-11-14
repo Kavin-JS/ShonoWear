@@ -1,2 +1,2 @@
 import { defineConfig } from 'vitest/config';
-export default defineConfig({ test: { include: ['tests/**/*.test.js'], environment: 'node', pool: 'forks' } });
+export default defineConfig({ esbuild: { jsx: 'automatic' }, test: { include: ['tests/**/*.test.js'], environment: 'node', pool: 'forks' } });

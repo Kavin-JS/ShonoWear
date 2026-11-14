@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Chevron, Close } from './Icons.jsx';
+import Img from './Img.jsx';
 
 /** Product photo gallery: thumbnails, swipe on phones, hover-zoom on desktop, full-screen lightbox. */
 export default function Gallery({ images, alt, overlay }) {
@@ -33,7 +34,7 @@ export default function Gallery({ images, alt, overlay }) {
               style={{ flex: '0 0 100%', scrollSnapAlign: 'start', border: 'none', padding: 0, background: 'none', cursor: 'zoom-in', overflow: 'hidden' }}>
               {bad[k]
                 ? <span style={{ display: 'grid', placeItems: 'center', height: '100%', fontSize: 56 }}>👕</span>
-                : <img src={src} alt={k === 0 ? alt : `${alt}, photo ${k + 1}`} loading={k ? 'lazy' : 'eager'} onError={() => setBad(b => ({ ...b, [k]: 1 }))}
+                : <Img src={src} alt={k === 0 ? alt : `${alt}, photo ${k + 1}`} priority={k === 0} sizes="(max-width: 900px) 100vw, 560px" onError={() => setBad(b => ({ ...b, [k]: 1 }))}
                     style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'transform .15s',
                       transform: zoom.on && k === i ? 'scale(1.8)' : 'none', transformOrigin: `${zoom.x}% ${zoom.y}%` }} />}
             </button>
@@ -55,7 +56,7 @@ export default function Gallery({ images, alt, overlay }) {
           {list.map((src, k) => (
             <button key={src + k} type="button" aria-label={`Show photo ${k + 1}`} aria-current={k === i} onClick={() => go(k)}
               style={{ flex: '0 0 64px', aspectRatio: '3 / 4', borderRadius: 8, overflow: 'hidden', padding: 0, cursor: 'pointer', background: 'var(--bg3)', border: `2px solid ${k === i ? 'var(--red)' : 'transparent'}` }}>
-              <img src={src} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <Img src={src} sizes="80px" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             </button>
           ))}
         </div>

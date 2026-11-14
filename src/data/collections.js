@@ -3,7 +3,11 @@
     match(p)  decides which products belong. Collections with no products are hidden automatically.
     sort      'relevance' | 'newest' | 'price-asc' | 'price-desc'
 */
+import { saleFor, preorderDate } from '../lib/offers.js';
+
 export const collections = [
+  { slug: 'flash-sale', title: 'Flash sale', blurb: 'Limited-time prices. When the timer ends, so does the price.', sort: 'price-asc', match: p => Boolean(saleFor(p)) },
+  { slug: 'pre-order', title: 'Pre-order', blurb: 'Reserve it now; it ships on the date shown.', sort: 'relevance', match: p => Boolean(preorderDate(p)) },
   { slug: 'new-arrivals', title: 'New arrivals', blurb: 'The latest additions, newest first.', sort: 'newest', match: p => Boolean(p.addedAt) },
   { slug: 'ships-from-us', title: 'Ships from us', blurb: 'Sold and delivered by Shonowear. Easy returns, tracked delivery.', sort: 'relevance', match: p => p.fulfilment === 'own' },
   { slug: 'wedding-season', title: 'Wedding season', blurb: 'Sharp, classic and date-night pieces for functions and family events.', sort: 'price-desc', match: p => p.tags.includes('classic') || p.tags.includes('datenight') },

@@ -12,7 +12,7 @@ export default function Rail({ title, to, items, hint }) {
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
         <div><h2 className="section-title" style={{ fontFamily: 'var(--font-body)' }}>{title}</h2>{hint && <p style={{ fontSize: 13, color: 'var(--muted)', marginTop: 2 }}>{hint}</p>}</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <Link to={to} style={{ fontSize: 13, fontWeight: 600, color: 'var(--red)', marginRight: 6 }}>View all</Link>
+          <Link to={to} style={{ fontSize: 13, fontWeight: 600, color: 'var(--red-text)', marginRight: 6 }}>View all</Link>
           <button type="button" className="chip rail-arrow" aria-label={`Scroll ${title} left`} onClick={() => scroll(-1)} style={{ padding: 6 }}><Chevron dir="left" /></button>
           <button type="button" className="chip rail-arrow" aria-label={`Scroll ${title} right`} onClick={() => scroll(1)} style={{ padding: 6 }}><Chevron /></button>
         </div>

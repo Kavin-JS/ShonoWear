@@ -25,7 +25,7 @@ export default function Toaster() {
       boxShadow: '0 8px 30px rgba(0,0,0,0.5)', maxWidth: 'calc(100vw - 32px)',
     }}>
       <span>{toast.message}</span>
-      {toast.href && <Link to={toast.href} onClick={() => setToast(null)} style={{ color: 'var(--red)', whiteSpace: 'nowrap' }}>{toast.label || 'View'}</Link>}
+      {toast.href && <Link to={toast.href} onClick={() => setToast(null)} style={{ color: 'var(--red-text)', whiteSpace: 'nowrap' }}>{toast.label || 'View'}</Link>}
     </div>
   );
 }

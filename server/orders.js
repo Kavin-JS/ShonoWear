@@ -9,14 +9,19 @@
  * even if the hold expired or the order was cancelled, the order becomes "paid" and is
  * flagged for review so a human can ship it or refund it.
  */
+import { eKey } from './ekey.js';
+import { recordConsent } from './marketing.js';
 import crypto from 'node:crypto';
 import { store, log } from './guard.js';
-import { commit, availability } from './stock.js';
-import { sendOrderEmails, sendLowStockAlert } from './notify.js';
+import { commit, uncommit, release, availability } from './stock.js';
+import { sendOrderEmails, sendLowStockAlert, sendGiftCardEmail, sendGiftReceipt } from './notify.js';
+import { commitPromo, uncommitPromo, releasePromo, markCustomerPaid, referralCodeFor, custKeys } from './promos.js';
+import { commitGift, uncommitGift, releaseGift, issueForOrder } from './giftcards.js';
+import { forgetBag } from './bags.js';
 import { STORE } from '../src/data/storeConfig.js';
 
 const orderKey = (id) => `order:${id}`;
-const PAID_STATES = new Set(['paid', 'shipped', 'delivered']);
+const PAID_STATES = new Set(['paid', 'shipped', 'delivered', 'cod_placed']);
 
 export const newOrderId = () => crypto.randomBytes(12).toString('base64url');
 
@@ -32,9 +37,11 @@ export async function saveOrder(order) {
 export async function insertOrder(order) {
   await store([
     ['SET', orderKey(order.id), JSON.stringify(order)],
-    ['SET', `rzp:${order.razorpay.orderId}`, order.id, 'EX', 31536000],
+    ...(order.razorpay?.orderId ? [['SET', `rzp:${order.razorpay.orderId}`, order.id, 'EX', 31536000]] : []),
     ['LPUSH', 'orders:index', order.id],
     ['LTRIM', 'orders:index', 0, 999],
+    // per-customer index for "My orders" (hashed email; nothing readable in the key)
+    ...(order.customer?.email ? [['LPUSH', `ordersby:${eKey(order.customer.email)}`, order.id], ['LTRIM', `ordersby:${eKey(order.customer.email)}`, 0, 199]] : []),
   ]);
 }
 
@@ -112,11 +119,19 @@ export async function finalizePaid(orderId, { paymentId, source }) {
   if (order.status === 'expired' || Date.now() > order.expiresAt) flags.push('paid-after-hold-expired');
   if (order.status === 'cancelled') flags.push('paid-after-cancel');
 
-  const { oversold } = await commit(order.id, order.items);
-  if (oversold) flags.push('oversold-needs-review');
+  if (order.kind !== 'giftcard') {
+    const { oversold } = await commit(order.id, order.items);
+    if (oversold) flags.push('oversold-needs-review');
+  }
+  flags.push(...await commitPromo(order), ...await commitGift(order));
+  await markCustomerPaid(order);
+  const extra = {};
+  if (order.kind === 'giftcard') extra.giftcardCode = (await issueForOrder({ ...order })).code;
+  else { const rc = await referralCodeFor(order.customer).catch(() => null); if (rc) extra.referralCode = rc; }
 
   const paid = {
     ...order,
+    ...extra,
     status: PAID_STATES.has(order.status) ? order.status : 'paid',
     paidAt: marker.paidAt,
     razorpay: { ...order.razorpay, paymentId: marker.paymentId },
@@ -126,13 +141,74 @@ export async function finalizePaid(orderId, { paymentId, source }) {
   await saveOrder(paid);
   await store([['SET', `done:${order.id}`, '1']]);
   log('order_paid', { source, flags: paid.flags });
-
-  const [first] = await store([['SET', `emailed:${order.id}`, '1', 'NX', 'EX', 31536000]]);
-  if (first === 'OK') {
-    await sendOrderEmails(paid).catch(err => log('order_email_failed', { msg: err.message }));
-    await lowStockCheck(paid.items).catch(err => log('low_stock_check_failed', { msg: err.message }));
-  }
+  await afterConfirm(paid);
   return { ok: true, order: paid };
+}
+
+/** Emails once, then the saved-bag cleanup and the low-stock check. Never throws: the order is already safe. */
+async function afterConfirm(o) {
+  const [first] = await store([['SET', `emailed:${o.id}`, '1', 'NX', 'EX', 31536000]]);
+  if (first === 'OK') {
+    if (o.kind === 'giftcard') await sendGiftEmails(o).catch(err => log('order_email_failed', { msg: err.message }));
+    else {
+      await sendOrderEmails(o).catch(err => log('order_email_failed', { msg: err.message }));
+      await lowStockCheck(o.items).catch(err => log('low_stock_check_failed', { msg: err.message }));
+    }
+  }
+  await forgetBag(o.customer?.email).catch(() => {});
+  if (o.marketingOptIn) await recordConsent(o.customer, { source: 'checkout' }).catch(() => {});
+}
+
+async function sendGiftEmails(o) {
+  const card = await issueForOrder(o);
+  const base = (process.env.SITE_URL || '').replace(/\/+$/, '');
+  await sendGiftCardEmail({ to: o.giftcard.to, from: o.customer.name, amount: card.amount, code: card.code, expiresAt: card.expiresAt, message: o.giftcard.message, url: base });
+  await sendGiftReceipt({ to: o.customer.email, name: o.customer.name, amount: card.amount, number: o.number, recipient: o.giftcard.to });
+}
+
+/**
+ * Cash on delivery: nothing is paid yet, so the order is "placed" and its stock is taken for good
+ * (a held unit would expire). Idempotent in the same way as finalizePaid.
+ */
+export async function confirmCod(orderId) {
+  const order = await getOrder(orderId, { raw: true });
+  if (!order) return { ok: false, reason: 'not_found' };
+  const [done] = await store([['GET', `done:${order.id}`]]);
+  if (done) return { ok: true, already: true, order };
+  const flags = [...(order.flags || [])];
+  const { oversold } = await commit(order.id, order.items);
+  if (oversold) flags.push('oversold-needs-review');
+  flags.push(...await commitPromo(order));
+  await markCustomerPaid(order);
+  const pk = custKeys(order.customer).find(k => k.startsWith('p:'));
+  if (pk) await store([['HSET', `codopen:${pk}`, order.id, '1']]);
+  const rc = await referralCodeFor(order.customer).catch(() => null);
+  const placed = { ...order, status: 'cod_placed', placedAt: new Date().toISOString(), flags: [...new Set(flags)], ...(rc ? { referralCode: rc } : {}) };
+  await saveOrder(placed);
+  await store([['SET', `done:${order.id}`, '1']]);
+  log('order_cod_placed', { flags: placed.flags });
+  await afterConfirm(placed);
+  return { ok: true, order: placed };
+}
+
+/** Give the units, coupon use and COD slot of a COD order back (cancelled, refused at the door). Idempotent. */
+export async function restockCod(order) {
+  await uncommit(order.id, order.items);
+  await uncommitPromo(order);
+  await uncommitGift(order);
+  await closeCodSlot(order);
+}
+
+export async function closeCodSlot(order) {
+  const pk = custKeys(order.customer).find(k => k.startsWith('p:'));
+  if (pk) await store([['HDEL', `codopen:${pk}`, order.id]]).catch(() => {});
+}
+
+/** Release every unpaid claim an order holds: stock, coupon use, gift-card amount. */
+export async function releaseClaims(order) {
+  await release(order.id, order.items);
+  await releasePromo(order);
+  await releaseGift(order);
 }
 
 export async function listOrders(limit = 100) {
@@ -146,9 +222,16 @@ export async function listOrders(limit = 100) {
 export function publicView(o) {
   return {
     id: o.id, number: o.number, status: o.status, createdAt: o.createdAt, paidAt: o.paidAt || null,
-    items: o.items.map(i => ({ id: i.id, name: i.name, size: i.size, qty: i.qty, price: i.price })),
+    kind: o.kind || 'order',
+    items: o.items.map(i => ({ id: i.id, name: i.name, size: i.size, qty: i.qty, price: i.price, ...(i.listPrice ? { listPrice: i.listPrice } : {}), ...(i.preorder ? { preorder: i.preorder } : {}) })),
     totals: o.totals,
+    payment: o.payment?.method || 'online',
+    promoCode: o.promo?.code || null,
+    shipsBy: o.shipsBy || null,
     city: o.customer?.city, state: o.customer?.state,
     shipment: o.shipment || null,
+    referralCode: o.referralCode || null,
+    giftCode: o.kind === 'giftcard' && PAID_STATES.has(o.status) ? (o.giftcardCode || null) : null,
+    codCollected: Boolean(o.codCollectedAt),
   };
 }

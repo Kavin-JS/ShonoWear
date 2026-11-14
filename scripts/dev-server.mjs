@@ -47,6 +47,7 @@ http.createServer(async (req, res) => {
     let f = path.join(root, 'dist', decodeURIComponent(url.pathname));
     if (!f.startsWith(path.join(root, 'dist'))) { res.writeHead(403); return res.end(); }
     if (url.pathname.startsWith('/_vercel/') || (!fs.existsSync(f) && path.extname(url.pathname))) { res.writeHead(404); return res.end(); }
+    if (fs.existsSync(f) && fs.statSync(f).isDirectory() && fs.existsSync(path.join(f, 'index.html'))) f = path.join(f, 'index.html'); // like Vercel: /blog → blog/index.html
     if (!fs.existsSync(f) || fs.statSync(f).isDirectory()) f = path.join(root, 'dist', 'index.html');
     if (!fs.existsSync(f)) { res.writeHead(404); return res.end('Run `npm run build` first, or use `npm run dev` for the website.'); }
     res.writeHead(200, { 'Content-Type': mime[path.extname(f)] || 'application/octet-stream' });

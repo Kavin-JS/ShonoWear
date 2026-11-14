@@ -1,51 +1,47 @@
 /*
-  SHONOWEAR — Analytics
-  ─────────────────────────────────────────────────────────────
-  Lightweight event tracking. Two layers:
+  SHONOWEAR — Analytics (first-party, cookieless)
+  Counts a handful of anonymous events on our own server (see server/analytics.js) and shows them in /admin.
+  No third-party script, no cookie, no visitor id. Do Not Track / Global Privacy Control are respected.
 
-  Layer 1 — Vercel Web Analytics (free, no cookie banner needed,
-  GDPR-compliant, zero config after enabling in Vercel dashboard):
-  Dashboard → your project → Analytics → Enable
-
-  Layer 2 — Custom events logged to console in dev,
-  sent to Vercel Analytics in production via window.va().
-
-  EVENTS WE TRACK:
-  - outfit_viewed      : user sees results page
-  - outfit_saved       : user taps ♥ on a card
-  - outfit_buy_clicked : user taps Buy / Shop
-  - email_subscribed   : user submits email form
-  - fallback_used      : AI failed, rule-based engine used
-  - form_completed     : user submits the upload form
-  - timeout_hit        : AI call exceeded 25s
-  - chat_opened        : user opened the Shono chat
-  - chat_message_sent  : user sent a chat message
-  - chat_product_clicked : user tapped Shop on a product Shono recommended
-
-  HOW TO ADD CUSTOM EVENTS:
   import { track } from '../lib/analytics';
-  track('your_event_name', { optional: 'properties' });
+  track('your_event_name', { optional: 'properties' });   // only events listed in SERVER_EVENT are sent
 */
 
 const IS_DEV = typeof window !== 'undefined' && window.location.hostname === 'localhost';
 
+/** Event names used around the app → the whitelisted names the server counts. Anything not listed is not sent. */
+const SERVER_EVENT = { product_viewed: 'pv_product', added_to_bag: 'add_to_bag', outfit_buy_clicked: 'buy_click', chat_product_clicked: 'buy_click', form_completed: 'stylist_used', email_subscribed: 'email_signup', checkout_started: 'checkout_start' };
+
+/** People who send Do Not Track or Global Privacy Control are not counted at all. */
+function optedOut() {
+  try { return navigator.doNotTrack === '1' || window.doNotTrack === '1' || navigator.globalPrivacyControl === true; } catch { return false; }
+}
+/** Sends one anonymous count to our own server (no cookie, no id, no third party). Never throws. */
+export function count(e, id) {
+  try {
+    if (IS_DEV || optedOut() || typeof fetch !== 'function') return;
+    const body = JSON.stringify(id ? { e, id } : { e });
+    fetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body, keepalive: true }).catch(() => {});
+  } catch { /* analytics must never crash the app */ }
+}
+/** Counts one page view in a coarse group (home, shop, product…). The page address itself is never sent. */
+export function countPageview(pathname, id) {
+  const p = pathname || '/';
+  const g = p === '/' ? 'pv_home' : p.startsWith('/shop') ? 'pv_shop' : p.startsWith('/product/') ? 'pv_product' : p.startsWith('/collection') ? 'pv_collection' : /^\/(blog|about|faq|care|policies|privacy|terms|contact)/.test(p) ? 'pv_content' : 'pv_other';
+  if (/^\/(admin|order|account|checkout|unsubscribe)/.test(p)) return;
+  count(g, g === 'pv_product' ? id : undefined);
+}
+
 /**
  * Track a named event with optional properties.
- * Uses Vercel Analytics if available, falls back to console.log in dev.
+ * In dev it is logged to the console. In production the few events on the whitelist above are counted on our own server.
  */
 export function track(eventName, properties = {}) {
   try {
-    if (IS_DEV) {
-      console.log(`[Analytics] ${eventName}`, properties);
-      return;
-    }
-    // Vercel Analytics (window.va is injected by @vercel/analytics)
-    if (typeof window !== 'undefined' && window.va) {
-      window.va('event', { name: eventName, ...properties });
-    }
-  } catch {
-    // Never let analytics errors crash the app
-  }
+    if (IS_DEV) { console.log(`[Analytics] ${eventName}`, properties); return; }
+    const e = SERVER_EVENT[eventName];
+    if (e) count(e, properties.productId);
+  } catch { /* never let analytics errors crash the app */ }
 }
 
 /* ── Convenience wrappers for common events ── */
@@ -89,6 +85,10 @@ export const Analytics = {
 
   timeoutHit() {
     track('timeout_hit');
+  },
+
+  checkoutStarted() {
+    track('checkout_started');
   },
 
   chatOpened() {

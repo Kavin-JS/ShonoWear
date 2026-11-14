@@ -90,7 +90,7 @@ function ProductCard({ product, onNavigate }) {
         />
       )}
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: '9px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--red)' }}>
+        <div style={{ fontSize: '9px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--red-text)' }}>
           {product.brand}
         </div>
         <Link to={`/product/${product.id}`} onClick={onNavigate} style={{
@@ -152,7 +152,7 @@ function Bubble({ message, onRetry, onNavigate }) {
 
       {!isUser && message.shopLink && (
         <Link to={message.shopLink} onClick={onNavigate}
-          style={{ fontSize: '12px', color: 'var(--red)', textDecoration: 'underline' }}>
+          style={{ fontSize: '12px', color: 'var(--red-text)', textDecoration: 'underline' }}>
           {message.shopLink === '/bag' ? 'Open my bag →' : 'See all in the shop →'}
         </Link>
       )}
@@ -263,7 +263,7 @@ export default function ChatWidget() {
         type="button"
         className={`sw-chat-launcher${open ? ' sw-open' : ''}${hideLauncherOnPhone ? ' sw-hide-phone' : ''}`}
         onClick={() => setOpen(v => !v)}
-        aria-label={open ? 'Close style assistant' : 'Open style assistant'}
+        aria-label={open ? 'Close style assistant' : 'Ask Shono, the style assistant'}
         aria-expanded={open}
       >
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -283,7 +283,7 @@ export default function ChatWidget() {
           }}>
             <div>
               <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '22px', letterSpacing: '0.06em', lineHeight: 1 }}>
-                SHONO<span style={{ color: 'var(--red)' }}> · STYLIST</span>
+                SHONO<span style={{ color: 'var(--red-text)' }}> · STYLIST</span>
               </div>
               <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '3px' }}>
                 Ask about fits, colours, occasions, budgets

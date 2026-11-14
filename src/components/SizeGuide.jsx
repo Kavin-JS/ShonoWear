@@ -67,7 +67,7 @@ export default function SizeGuide({ product, onPick, onClose }) {
               <select style={inp} value={f.fit} onChange={set('fit')}><option value="snug">Snug</option><option value="regular">Regular</option><option value="relaxed">Relaxed</option></select>
             </label>
             <button type="submit" className="btn-primary">Suggest a size</button>
-            {res?.error && <p role="alert" style={{ color: 'var(--red)', fontSize: 13 }}>{res.error}</p>}
+            {res?.error && <p role="alert" style={{ color: 'var(--red-text)', fontSize: 13 }}>{res.error}</p>}
             {res?.size && (
               <div role="status" style={{ background: 'var(--red-dim)', borderRadius: 10, padding: 14, fontSize: 14 }}>
                 We'd suggest <strong>{res.size}</strong> <span style={{ color: 'var(--muted)' }}>(based on {res.basis})</span>.

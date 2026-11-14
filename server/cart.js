@@ -6,6 +6,7 @@
 import { catalog } from '../src/data/catalog.js';
 import { STORE } from '../src/data/storeConfig.js';
 import { isOwn } from '../src/lib/store.js';
+import { preorderDate } from '../src/lib/offers.js';
 import { isLiveMode } from './razorpay.js';
 
 const products = new Map(catalog.map(p => [p.id, p]));
@@ -27,7 +28,7 @@ export function parseCart(raw) {
     const key = `${p.id}:${size}`;
     if (seen.has(key)) return { ok: false, error: 'Duplicate item in the bag.' };
     seen.add(key);
-    lines.push({ product: p, id: p.id, size, qty });
+    lines.push({ product: p, id: p.id, size, qty, preorder: preorderDate(p) });
   }
   return { ok: true, lines };
 }

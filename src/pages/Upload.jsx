@@ -67,7 +67,7 @@ function PageHeader({ eyebrow, title, italic, sub }) {
         lineHeight: 0.95, marginBottom: '12px',
       }}>
         {title}{' '}
-        <em style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--red)', fontStyle: 'italic' }}>
+        <em style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--red-text)', fontStyle: 'italic' }}>
           {italic}
         </em>
       </h1>
@@ -152,7 +152,7 @@ function ErrorBox({ msg }) {
   return (
     <div style={{
       background: 'rgba(232,21,58,0.1)', border: '1px solid rgba(232,21,58,0.3)',
-      borderRadius: '4px', padding: '11px 14px', color: 'var(--red)',
+      borderRadius: '4px', padding: '11px 14px', color: 'var(--red-text)',
       fontSize: '13px', marginBottom: '22px',
     }}>{msg}</div>
   );
@@ -308,7 +308,7 @@ function StepStyle({ data, onChange, preview, setPreview, fileName, setFileName,
         </div>
         <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp"
           onChange={e => handleFile(e.target.files[0])} style={{ display: 'none' }} />
-        {preview && <div style={{ marginTop: '7px', fontSize: '12px', color: 'var(--red)' }}>✓ {fileName}</div>}
+        {preview && <div style={{ marginTop: '7px', fontSize: '12px', color: 'var(--red-text)' }}>✓ {fileName}</div>}
       </div>
 
       {/* Aesthetic */}

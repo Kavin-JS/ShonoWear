@@ -4,6 +4,7 @@ import { catalog } from '../data/catalog.js';
 import ProductCard from '../components/ProductCard.jsx';
 import FilterPanel from '../components/FilterPanel.jsx';
 import { Filter, Close } from '../components/Icons.jsx';
+import { useT } from '../i18n/index.jsx';
 import {
   parseFilters, filtersToParams, filterProducts, activeFilterCount, CATEGORY_LABELS, SORTS,
 } from '../lib/shopFilters.js';
@@ -26,6 +27,7 @@ function chipsFor(f) {
 }
 
 export default function Shop() {
+  const t = useT();
   const [params, setParams] = useSearchParams();
   const [sheet, setSheet] = useState(false);
   const f = useMemo(() => parseFilters(params), [params]);
@@ -77,7 +79,7 @@ export default function Shop() {
             {chipsFor(f).map(([k, label]) => (
               <button key={k} type="button" className="chip" onClick={() => set({ [k]: '' })} aria-label={`Remove filter ${label}`} style={{ display: 'inline-flex', gap: 6, alignItems: 'center', background: 'var(--bg2)' }}>{label} <Close size={12} /></button>
             ))}
-            <button type="button" onClick={() => setParams({}, { replace: true })} style={{ background: 'none', border: 'none', color: 'var(--red)', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>Clear all</button>
+            <button type="button" onClick={() => setParams({}, { replace: true })} style={{ background: 'none', border: 'none', color: 'var(--red-text)', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>Clear all</button>
           </div>
         )}
 
@@ -87,8 +89,8 @@ export default function Shop() {
             {list.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '64px 0', color: 'var(--muted)' }}>
                 <p style={{ fontSize: 40, marginBottom: 8 }}>🔍</p>
-                <p style={{ marginBottom: 20 }}>Nothing matches those filters yet.</p>
-                <button type="button" className="btn-primary" onClick={() => setParams({}, { replace: true })}>Show everything</button>
+                <p style={{ marginBottom: 20 }}>{t('Nothing matches those filters yet.')}</p>
+                <button type="button" className="btn-primary" onClick={() => setParams({}, { replace: true })}>{t('Show everything')}</button>
               </div>
             ) : (
               <div className="product-grid">
@@ -100,7 +102,7 @@ export default function Shop() {
 
         <p style={{ fontSize: 11, color: 'var(--muted2)', maxWidth: 640, margin: '40px 0 0' }}>
           Items marked “on Amazon” or “on Myntra” are sold by those stores: price and availability are theirs and can change. Those links are affiliate links, so we may earn a commission at no extra cost to you.
-          Not sure what to pick? <Link to="/upload" style={{ color: 'var(--red)' }}>Get outfits matched to you</Link>.
+          Not sure what to pick? <Link to="/upload" style={{ color: 'var(--red-text)' }}>{t('Get outfits matched to you')}</Link>.
         </p>
       </div>
 
@@ -109,12 +111,12 @@ export default function Shop() {
           <div onClick={() => setSheet(false)} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,.5)' }} />
           <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, maxHeight: '86vh', background: 'var(--bg)', borderRadius: '18px 18px 0 0', display: 'flex', flexDirection: 'column', animation: 'fadeUp .25s ease' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 18px', borderBottom: '1px solid var(--border)' }}>
-              <strong>Filters</strong>
+              <strong>{t('Filters')}</strong>
               <button type="button" aria-label="Close filters" onClick={() => setSheet(false)} style={{ background: 'none', border: 'none', color: 'var(--text)', cursor: 'pointer' }}><Close /></button>
             </div>
             <div style={{ overflowY: 'auto', padding: '0 18px' }}><FilterPanel f={f} set={set} /></div>
             <div style={{ display: 'flex', gap: 10, padding: '12px 18px calc(12px + env(safe-area-inset-bottom))', borderTop: '1px solid var(--border)' }}>
-              <button type="button" className="btn-ghost" style={{ flex: 1 }} onClick={() => setParams({}, { replace: true })}>Clear</button>
+              <button type="button" className="btn-ghost" style={{ flex: 1 }} onClick={() => setParams({}, { replace: true })}>{t('Clear')}</button>
               <button type="button" className="btn-primary" style={{ flex: 2 }} onClick={() => setSheet(false)}>Show {list.length} item{list.length === 1 ? '' : 's'}</button>
             </div>
           </div>

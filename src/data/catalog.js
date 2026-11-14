@@ -1,3 +1,4 @@
+import { importedProducts } from './catalogImported.js';
 /*
   SHONOWEAR PRODUCT CATALOG — Phase 3
   ─────────────────────────────────────────────────────────────
@@ -384,4 +385,22 @@ export const catalog = [
     tags: ['streetwear', 'casual', 'low', 'black', 'statement'],
     explanation: 'Sample product used to test checkout (only 2 in stock, handy for testing sell-out).',
   },
+  {
+    id: 'own-sample-hoodie',
+    name: '[SAMPLE] Pre-order Heavy Hoodie',
+    brand: 'Shonowear',
+    category: 'top',
+    image: 'https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=400&h=500&fit=crop',
+    price: 1799,
+    fulfilment: 'own',
+    sample: true,
+    platform: 'Shonowear',
+    sizes: { M: 10, L: 10, XL: 5 },
+    preorder: { shipsOn: '2099-12-31' },
+    addedAt: '2026-11-10',
+    sizeChart: 'tops',
+    tags: ['streetwear', 'casual', 'winter', 'high', 'black', 'oversized'],
+    explanation: 'Sample pre-order: stock counts are the number of pre-orders you will take per size. Replace with your own.',
+  },
+  ...importedProducts,
 ];

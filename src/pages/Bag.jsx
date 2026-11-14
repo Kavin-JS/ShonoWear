@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { useBag, bagEntries, removeLine, removeFromBag, clearBag, setQty, setSize } from '../lib/bag.js';
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { useBag, bagEntries, removeLine, removeFromBag, clearBag, setQty, setSize, addToBag, getLines } from '../lib/bag.js';
+import { unitPrice, preorderDate, prettyDate } from '../lib/offers.js';
 import { BuyLink, inr } from '../components/ProductCard.jsx';
 import { validateItems, toCard } from '../lib/outfitRules.js';
 import { saveOutfit } from '../lib/savedOutfits.js';
@@ -8,6 +9,8 @@ import { isOwn, sizesOf, computeTotals, bundleGap } from '../lib/store.js';
 import { STORE } from '../data/storeConfig.js';
 import { useStock } from '../lib/useStock.js';
 import { useCheckoutConfig } from '../lib/checkoutConfig.js';
+import { useT } from '../i18n/index.jsx';
+import Img from '../components/Img.jsx';
 
 function missingPieces(items) {
   const has = (c) => items.some(i => i.category === c);
@@ -17,7 +20,27 @@ function missingPieces(items) {
   return missing;
 }
 
+/** A reminder email links to /bag?restore=id~size~qty,... : put those lines back (the bag still validates every one). */
+function useRestore() {
+  const [params, setParams] = useSearchParams();
+  useEffect(() => {
+    const r = params.get('restore');
+    if (!r) return;
+    for (const part of r.slice(0, 600).split(',').slice(0, 10)) {
+      const [id, size, qty] = part.split('~');
+      const n = Math.min(STORE.maxQtyPerLine, Math.max(1, parseInt(qty, 10) || 1));
+      const have = getLinesQty(id, size);
+      if (have < n) addToBag(id, { size, qty: n - have });
+    }
+    params.delete('restore'); setParams(params, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+}
+const getLinesQty = (id, size) => getLines().find(l => l.id === id && l.size === size)?.qty || 0;
+
 export default function Bag() {
+  const t = useT();
+  useRestore();
   const lines = useBag();
   const entries = useMemo(() => bagEntries(lines), [lines]);
   const own = entries.filter(e => isOwn(e.product));
@@ -42,11 +65,11 @@ export default function Bag() {
       <main id="main" className="page" style={{ paddingTop: '110px', textAlign: 'center' }}>
         <div className="container" style={{ maxWidth: '460px' }}>
           <div style={{ fontSize: '48px', marginBottom: '16px' }}>🛍️</div>
-          <h1 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '44px', marginBottom: '12px' }}>YOUR BAG IS EMPTY</h1>
-          <p style={{ color: 'var(--muted)', marginBottom: '28px' }}>Browse the shop, or let Shono put a look together for you.</p>
+          <h1 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '44px', marginBottom: '12px' }}>{t('YOUR BAG IS EMPTY')}</h1>
+          <p style={{ color: 'var(--muted)', marginBottom: '28px' }}>{t('Browse the shop, or let Shono put a look together for you.')}</p>
           <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link to="/shop" className="btn-primary">Shop now</Link>
-            <Link to="/upload" className="btn-ghost">Get my outfits</Link>
+            <Link to="/shop" className="btn-primary">{t('Shop now')}</Link>
+            <Link to="/upload" className="btn-ghost">{t('Get my outfits')}</Link>
           </div>
         </div>
       </main>
@@ -58,7 +81,7 @@ export default function Bag() {
   return (
     <main id="main" className="page" style={{ paddingTop: '100px' }}>
       <div className="container" style={{ maxWidth: '860px' }}>
-        <div className="eyebrow">Your bag</div>
+        <div className="eyebrow">{t('Your bag')}</div>
         <h1 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 'clamp(40px, 6vw, 64px)', marginBottom: '20px' }}>
           {entries.length} ITEM{entries.length > 1 ? 'S' : ''}
         </h1>
@@ -66,7 +89,7 @@ export default function Bag() {
         {missing.length > 0 && (
           <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: '6px', padding: '12px 16px', fontSize: '13px', marginBottom: '20px', color: 'var(--muted)' }}>
             Your bag has no {missing.join(' or ')} yet, so it isn't a full outfit.{' '}
-            {missing.map(m => <Link key={m} to={`/shop?cat=${m}`} style={{ color: 'var(--red)', marginRight: '10px' }}>Browse {m}</Link>)}
+            {missing.map(m => <Link key={m} to={`/shop?cat=${m}`} style={{ color: 'var(--red-text)', marginRight: '10px' }}>Browse {m}</Link>)}
           </div>
         )}
 
@@ -80,7 +103,7 @@ export default function Bag() {
                 const short = stock && (n ?? 0) < e.qty;
                 return (
                   <li key={`${e.id}:${e.size}`} style={row}>
-                    <Link to={`/product/${p.id}`}><img src={p.image} alt={p.name} loading="lazy" style={{ width: '72px', height: '96px', objectFit: 'cover', borderRadius: '4px', background: 'var(--bg3)' }} /></Link>
+                    <Link to={`/product/${p.id}`}><Img src={p.image} alt={p.name} sizes="72px" widths={[144, 216]} style={{ width: '72px', height: '96px', objectFit: 'cover', borderRadius: '4px', background: 'var(--bg3)' }} /></Link>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minWidth: 0 }}>
                       <Link to={`/product/${p.id}`} style={{ fontSize: '14px', color: 'var(--text)' }}>{p.name}</Link>
                       <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap', fontSize: '12px' }}>
@@ -95,10 +118,12 @@ export default function Bag() {
                           <span aria-live="polite">{e.qty}</span>
                           <button type="button" aria-label="Increase quantity" className="btn-ghost" style={{ padding: '2px 10px' }} disabled={e.qty >= STORE.maxQtyPerLine} onClick={() => setQty(e.id, e.size, e.qty + 1)}>+</button>
                         </span>
-                        <strong style={{ marginLeft: 'auto' }}>{inr(p.price * e.qty)}</strong>
+                        <strong style={{ marginLeft: 'auto' }}>{inr(unitPrice(p) * e.qty)}</strong>
                       </div>
-                      {short && <div role="alert" style={{ fontSize: '12px', color: 'var(--red)' }}>{(n ?? 0) === 0 ? 'Sold out in this size.' : `Only ${n} left in this size.`}</div>}
-                      <button type="button" onClick={() => removeLine(e.id, e.size)} style={{ alignSelf: 'flex-start', background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', fontSize: '12px', textDecoration: 'underline', padding: 0 }}>Remove</button>
+                      {unitPrice(p) < p.price && <div style={{ fontSize: 12, color: 'var(--red-text)' }}>Sale price · was {inr(p.price)}</div>}
+                      {preorderDate(p) && <div style={{ fontSize: 12, color: 'var(--muted)' }}>Pre-order · ships by {prettyDate(preorderDate(p))}</div>}
+                      {short && <div role="alert" style={{ fontSize: '12px', color: 'var(--red-text)' }}>{(n ?? 0) === 0 ? 'Sold out in this size.' : `Only ${n} left in this size.`}</div>}
+                      <button type="button" onClick={() => removeLine(e.id, e.size)} style={{ alignSelf: 'flex-start', background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', fontSize: '12px', textDecoration: 'underline', padding: 0 }}>{t('Remove')}</button>
                     </div>
                   </li>
                 );
@@ -117,17 +142,18 @@ export default function Bag() {
                 </div>
               )}
               {gap > 0 && <div role="status" style={{ fontSize: 12, color: 'var(--good)' }}>Add {gap} more item{gap === 1 ? '' : 's'} we ship and save {STORE.bundleDiscount.percent}%.</div>}
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Subtotal</span><span>{inr(totals.subtotal)}</span></div>
-              {totals.discount > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--good)' }}><span>Bundle discount</span><span>−{inr(totals.discount)}</span></div>}
-                            <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Shipping</span><span>{totals.shipping ? inr(totals.shipping) : 'Free'}</span></div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '18px', fontWeight: 600, borderTop: '1px solid var(--border)', paddingTop: '10px' }}><span>Total</span><span>{inr(totals.total)}</span></div>
-              <div style={{ fontSize: '11px', color: 'var(--muted2)' }}>Prices in INR. Delivery {STORE.deliveryEstimate}.</div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>{t('Subtotal')}</span><span>{inr(totals.subtotal)}</span></div>
+              {totals.discount > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--good)' }}><span>{t('Bundle discount')}</span><span>−{inr(totals.discount)}</span></div>}
+              {totals.onSale && <div style={{ fontSize: 11, color: 'var(--muted2)' }}>Sale items are left out of the bundle discount and promo codes.</div>}
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>{t('Shipping')}</span><span>{totals.shipping ? inr(totals.shipping) : t('Free')}</span></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '18px', fontWeight: 600, borderTop: '1px solid var(--border)', paddingTop: '10px' }}><span>{t('Total')}</span><span>{inr(totals.total)}</span></div>
+              <div style={{ fontSize: '11px', color: 'var(--muted2)' }}>Prices in INR. Delivery {STORE.deliveryEstimate}. Have a promo code or gift card? Enter it at checkout, where you can also choose cash on delivery.</div>
               {cfg && !cfg.checkoutEnabled ? (
-                <div role="alert" style={{ fontSize: '13px', color: 'var(--muted)' }}>Checkout is not available right now. Please come back soon.</div>
+                <div role="alert" style={{ fontSize: '13px', color: 'var(--muted)' }}>{t('Checkout is not available right now. Please come back soon.')}</div>
               ) : problems.length > 0 ? (
-                <div role="alert" style={{ fontSize: '13px', color: 'var(--red)' }}>Fix the items marked above to continue.</div>
+                <div role="alert" style={{ fontSize: '13px', color: 'var(--red-text)' }}>{t('Fix the items marked above to continue.')}</div>
               ) : (
-                <Link to="/checkout" className="btn-primary" style={{ justifyContent: 'center', marginTop: '6px' }}>Checkout · {inr(totals.total)}</Link>
+                <Link to="/checkout" className="btn-primary" style={{ justifyContent: 'center', marginTop: '6px' }}>{t('Checkout')} · {inr(totals.total)}</Link>
               )}
             </div>
           </section>
@@ -135,21 +161,21 @@ export default function Bag() {
 
         {partner.length > 0 && (
           <section aria-label="Items on partner stores" style={{ marginBottom: '32px' }}>
-            <h2 style={{ fontSize: '12px', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: '8px' }}>Buy on partner stores</h2>
+            <h2 style={{ fontSize: '12px', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: '8px' }}>{t('Buy on partner stores')}</h2>
             <p style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '12px', lineHeight: 1.6 }}>
               These are sold by Amazon or Myntra, not by us. Each is bought on that store with its own checkout. Prices are theirs and may have changed. Affiliate links: we may earn a commission at no extra cost to you.
             </p>
             <ul style={{ listStyle: 'none', display: 'grid', gap: '12px' }}>
               {partner.map(({ product: p }) => (
                 <li key={p.id} style={row}>
-                  <Link to={`/product/${p.id}`}><img src={p.image} alt={p.name} loading="lazy" style={{ width: '72px', height: '96px', objectFit: 'cover', borderRadius: '4px', background: 'var(--bg3)' }} /></Link>
+                  <Link to={`/product/${p.id}`}><Img src={p.image} alt={p.name} sizes="72px" widths={[144, 216]} style={{ width: '72px', height: '96px', objectFit: 'cover', borderRadius: '4px', background: 'var(--bg3)' }} /></Link>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: 0 }}>
-                    <div style={{ fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--red)' }}>{p.brand} · {p.platform}</div>
+                    <div style={{ fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--red-text)' }}>{p.brand} · {p.platform}</div>
                     <Link to={`/product/${p.id}`} style={{ fontSize: '14px', color: 'var(--text)' }}>{p.name}</Link>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginTop: 'auto' }}>
                       <strong>{inr(p.price)}</strong>
                       <BuyLink product={p} className="btn-primary" style={{ fontSize: '11px', padding: '8px 14px' }} />
-                      <button type="button" onClick={() => removeFromBag(p.id)} style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', fontSize: '12px', textDecoration: 'underline' }}>Remove</button>
+                      <button type="button" onClick={() => removeFromBag(p.id)} style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', fontSize: '12px', textDecoration: 'underline' }}>{t('Remove')}</button>
                     </div>
                   </div>
                 </li>
@@ -164,8 +190,8 @@ export default function Bag() {
               {saved ? '✓ Saved to outfits' : 'Save as an outfit'}
             </button>
           )}
-          <Link to="/shop" className="btn-ghost">Keep shopping</Link>
-          <button type="button" className="btn-ghost" onClick={clearBag}>Empty bag</button>
+          <Link to="/shop" className="btn-ghost">{t('Keep shopping')}</Link>
+          <button type="button" className="btn-ghost" onClick={clearBag}>{t('Empty bag')}</button>
         </div>
       </div>
     </main>

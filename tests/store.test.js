@@ -312,7 +312,7 @@ describe('misc', () => {
   it('config reports checkout state without secrets', async () => {
     let m = await setup();
     let r = await call(m.config, { method: 'GET' });
-    expect(r.body).toEqual({ checkoutEnabled: true, testMode: true });
+    expect(r.body).toEqual({ checkoutEnabled: true, testMode: true, overrides: {} });
     m = await setup({ RAZORPAY_KEY_ID: null, RAZORPAY_KEY_SECRET: null });
     r = await call(m.config, { method: 'GET' });
     expect(r.body.checkoutEnabled).toBe(false);
@@ -414,7 +414,7 @@ describe('bundle discount', () => {
     const c = (await placeOrder(m, cartOf([TEE, 'M', 1], [PANTS, '32', 1]))).body;   // 599 + 1299 = 1898
     expect(c.amount).toBe((1898 - 189) * 100);                                       // floor(1898 * 10%) = 189
     const o = await m.orders.getOrder(c.orderId);
-    expect(o.totals).toEqual({ subtotal: 1898, discount: 189, shipping: 0, total: 1709 });
+    expect(o.totals).toMatchObject({ subtotal: 1898, discount: 189, bundleDiscount: 189, couponDiscount: 0, shipping: 0, codFee: 0, giftApplied: 0, total: 1709 });
   });
   it('does not apply to a single item, and the shared function matches', async () => {
     const m = await setup();

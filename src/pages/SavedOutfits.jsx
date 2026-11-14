@@ -32,7 +32,7 @@ export default function SavedOutfits() {
           >
             SAVED
             <br />
-            <em style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--red)', fontStyle: 'italic' }}>
+            <em style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--red-text)', fontStyle: 'italic' }}>
               Looks
             </em>
           </h1>

@@ -27,7 +27,7 @@ export default function Terms() {
             lineHeight: 0.95, marginTop: '20px',
           }}>
             TERMS OF{' '}
-            <em style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--red)', fontStyle: 'italic' }}>
+            <em style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--red-text)', fontStyle: 'italic' }}>
               Service
             </em>
           </h1>
@@ -82,6 +82,10 @@ export default function Terms() {
           is subjective and may not suit your personal needs.
         </Section>
 
+        <Section title="Offers, codes and gift cards">
+          <p>Promo codes, referral codes and flash-sale prices are subject to their stated dates, minimum order values and usage limits, and cannot be combined unless stated. Sale items may be excluded from other discounts. We may cancel orders obtained through misuse of codes. Referral rewards are issued as gift cards once the referred order is delivered. Gift cards expire after {STORE.giftCards?.validMonths} months, are for use on this store only and are not redeemable for cash.</p>
+        </Section>
+
         <Section title="Limitation of liability">
           To the maximum extent permitted by law, Shonowear shall not be liable for any indirect, incidental,
           special, or consequential damages arising from use of the Service, including but not limited to
@@ -100,7 +104,7 @@ export default function Terms() {
         </Section>
 
         <Section title="Contact">
-          Questions about these Terms? Email <a href={`mailto:${STORE.supportEmail}`} style={{ color: 'var(--red)' }}>{STORE.supportEmail}</a>.
+          Questions about these Terms? Email <a href={`mailto:${STORE.supportEmail}`} style={{ color: 'var(--red-text)' }}>{STORE.supportEmail}</a>.
         </Section>
       </div>
     </main>

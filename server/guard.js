@@ -22,6 +22,8 @@ export const IS_PROD =
 export function log(event, fields = {}) {
   // Never pass emails, IPs, prompts, profiles or model output in here.
   console.log(JSON.stringify({ t: new Date().toISOString(), event, ...fields }));
+  // Problems are also kept for the admin "Recent problems" panel and may email the owner (best effort, never throws).
+  if (/_(error|failed|mismatch)$/.test(event)) import('./monitor.js').then(m => m.capture(event, fields)).catch(() => {});
 }
 
 /* ───────────────────────── store ───────────────────────── */
@@ -88,12 +90,12 @@ function memCmd([cmd, key, ...args]) {
       mem.set(key, { value: v, expiresAt: e?.expiresAt });
       return v;
     }
-    case 'ZADD': {
+    case 'ZADD': {          // ZADD key score member [score member ...]
       const z = e?.value instanceof Map ? e.value : new Map();
-      const isNew = !z.has(String(args[1]));
-      z.set(String(args[1]), Number(args[0]));
+      let added = 0;
+      for (let i = 0; i + 1 < args.length; i += 2) { if (!z.has(String(args[i + 1]))) added++; z.set(String(args[i + 1]), Number(args[i])); }
       mem.set(key, { value: z, expiresAt: e?.expiresAt });
-      return isNew ? 1 : 0;
+      return added;
     }
     case 'ZREM': {
       if (!(e?.value instanceof Map)) return 0;
@@ -112,12 +114,40 @@ function memCmd([cmd, key, ...args]) {
       const hi = args[1] === '+inf' ? Infinity : Number(args[1]);
       return [...e.value].filter(([, sc]) => sc >= lo && sc <= hi).sort((a, b) => a[1] - b[1]).map(([m]) => m);
     }
-    case 'HSET': {
+    case 'HSET': {          // HSET key field value [field value ...]
       const h = e?.value instanceof Map ? e.value : new Map();
+      for (let i = 0; i + 1 < args.length; i += 2) h.set(String(args[i]), String(args[i + 1]));
+      mem.set(key, { value: h, expiresAt: e?.expiresAt });
+      return 1;
+    }
+    case 'HSETNX': {
+      const h = e?.value instanceof Map ? e.value : new Map();
+      if (h.has(String(args[0]))) return 0;
       h.set(String(args[0]), String(args[1]));
       mem.set(key, { value: h, expiresAt: e?.expiresAt });
       return 1;
     }
+    case 'HINCRBY': {
+      const h = e?.value instanceof Map ? e.value : new Map();
+      const v = Number(h.get(String(args[0])) || 0) + Number(args[1]);
+      h.set(String(args[0]), String(v));
+      mem.set(key, { value: h, expiresAt: e?.expiresAt });
+      return v;
+    }
+    case 'HGET':
+      return e?.value instanceof Map && e.value.has(String(args[0])) ? e.value.get(String(args[0])) : null;
+    case 'HEXISTS':
+      return e?.value instanceof Map && e.value.has(String(args[0])) ? 1 : 0;
+    case 'HLEN':
+      return e?.value instanceof Map ? e.value.size : 0;
+    case 'HDEL':
+      return e?.value instanceof Map && e.value.delete(String(args[0])) ? 1 : 0;
+    case 'HGETALL': {
+      if (!(e?.value instanceof Map)) return [];
+      return [...e.value].flat();
+    }
+    case 'ZCARD':
+      return e?.value instanceof Map ? e.value.size : 0;
     case 'HVALS':
       return e?.value instanceof Map ? [...e.value.values()] : [];
     case 'LPUSH': {
@@ -135,12 +165,43 @@ function memCmd([cmd, key, ...args]) {
       const end = Number(args[1]);
       return e.value.slice(Number(args[0]), end === -1 ? undefined : end + 1);
     }
+    case 'TYPE': {
+      if (!e) return 'none';
+      if (e.value instanceof Map) { const first = e.value.values().next().value; return typeof first === 'number' ? 'zset' : 'hash'; }
+      return Array.isArray(e.value) ? 'list' : 'string';
+    }
+    case 'PTTL': return !e ? -2 : e.expiresAt ? Math.max(1, e.expiresAt - now) : -1;
+    case 'PEXPIRE': if (e) e.expiresAt = now + Number(args[0]); return e ? 1 : 0;
+    case 'RPUSH': {
+      const list = Array.isArray(e?.value) ? e.value : [];
+      for (const a of args) list.push(String(a));
+      mem.set(key, { value: list, expiresAt: e?.expiresAt });
+      return list.length;
+    }
+    case 'ZRANGE': {          // only the form `ZRANGE key 0 -1 WITHSCORES` is needed (backups)
+      if (!(e?.value instanceof Map)) return [];
+      return [...e.value].sort((a, b) => a[1] - b[1]).flatMap(([m, sc]) => [m, String(sc)]);
+    }
     default:
       throw new Error(`unsupported dev command ${cmd}`);
   }
 }
 
 /** Run commands as one pipeline. Throws if the store is unavailable. */
+/** Every key in the store (SCAN in production). Used by backups only. */
+export async function allKeys() {
+  if (storeConfigured()) {
+    const keys = []; let cursor = '0';
+    do {
+      const [[next, batch]] = await upstash([['SCAN', cursor, 'COUNT', 500]]);
+      cursor = String(next); keys.push(...batch);
+    } while (cursor !== '0' && keys.length < 200000);
+    return [...new Set(keys)];
+  }
+  if (!IS_PROD) { const now = Date.now(); return [...mem].filter(([, e]) => !e.expiresAt || e.expiresAt > now).map(([k]) => k); }
+  throw new Error('store not configured');
+}
+
 export async function store(commands) {
   if (storeConfigured()) return upstash(commands);
   if (!IS_PROD) return commands.map(memCmd);
@@ -254,4 +315,13 @@ export async function rateLimit(name, id, max, windowSec) {
     ['TTL', key],
   ]);
   return { limited: count > max, count, retryAfter: Math.max(Number(ttl) || 0, 1) };
+}
+
+/** HGETALL answers a flat [field, value, field, value…] list (Upstash REST and our dev store). This turns it into an object. */
+export function hgetall(raw) {
+  if (!raw) return {};
+  if (!Array.isArray(raw)) return { ...raw };
+  const out = {};
+  for (let i = 0; i + 1 < raw.length; i += 2) out[String(raw[i])] = raw[i + 1];
+  return out;
 }

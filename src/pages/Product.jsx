@@ -17,17 +17,25 @@ import SizeGuide from '../components/SizeGuide.jsx';
 import { chartFor } from '../lib/sizeGuide.js';
 import { variantsOf, colorOf, SWATCH } from '../lib/colors.js';
 import { pushRecent } from '../lib/recent.js';
+import ProductSocial from '../components/ProductSocial.jsx';
 import RecentlyViewed from '../components/RecentlyViewed.jsx';
 import PincodeCheck from '../components/PincodeCheck.jsx';
 import NotifyMe from '../components/NotifyMe.jsx';
 import NotFound from './NotFound.jsx';
+import { Price, SaleBanner } from '../components/Price.jsx';
+import { preorderDate, prettyDate, unitPrice } from '../lib/offers.js';
+import { useT } from '../i18n/index.jsx';
+import { looksWith } from '../lib/looks.js';
 
 const index = byId(catalog);
 
 export default function Product() {
+  const t = useT();
   const { id } = useParams();
+  const curated = looksWith(id);
   const product = index.get(id);
   const navigate = useNavigate();
+  const pre = product ? preorderDate(product) : null;
   const [imgError, setImgError] = useState(false);
   const [size, setSize] = useState('');
   const [qty, setQty] = useState(1);
@@ -80,12 +88,11 @@ export default function Product() {
             overlay={<WishButton product={product} style={{ position: 'absolute', top: 14, right: 14, zIndex: 1 }} />} />
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', alignSelf: 'start' }}>
-            <div style={{ fontSize: '11px', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--red)' }}>{product.brand}</div>
+            <div style={{ fontSize: '11px', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--red-text)' }}>{product.brand}</div>
             <h1 style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 'clamp(22px, 3.4vw, 32px)', lineHeight: 1.2, letterSpacing: '-0.01em' }}>{product.name}</h1>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
-              <span style={{ fontSize: 30, fontWeight: 700 }}>{inr(product.price)}</span>
-              {discountPct(product) > 0 && <><s style={{ color: 'var(--muted2)' }}>{inr(product.mrp)}</s><span style={{ color: 'var(--good)', fontWeight: 600 }}>{discountPct(product)}% off</span></>}
-            </div>
+            <SaleBanner product={product} />
+            <Price product={product} size={30} small={14} gap={10} />
+            {pre && <div role="note" style={{ border: '1px solid var(--border2)', borderRadius: 10, padding: '8px 12px', fontSize: 13 }}><strong>Pre-order.</strong> This ships by {prettyDate(pre)}. You pay now and we deliver after that date. Quantities are limited.</div>}
             {variants.length > 1 && (
               <div role="group" aria-label="Colour">
                 <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 8 }}>Colour: <strong style={{ color: 'var(--text)', textTransform: 'capitalize' }}>{colorOf(product)}</strong></div>
@@ -102,10 +109,10 @@ export default function Product() {
             {own ? (
               <>
                 <fieldset style={{ border: 'none', padding: 0 }}>
-                  <legend style={{ fontSize: '11px', letterSpacing: '0.12em', textTransform: 'uppercase', color: sizeError ? 'var(--red)' : 'var(--muted)', marginBottom: '8px', width: '100%' }}>
+                  <legend style={{ fontSize: '11px', letterSpacing: '0.12em', textTransform: 'uppercase', color: sizeError ? 'var(--red-text)' : 'var(--muted)', marginBottom: '8px', width: '100%' }}>
                     <span style={{ display: 'flex', justifyContent: 'space-between' }}>
                       <span>{sizeError ? 'Please choose a size' : 'Size'}</span>
-                      {hasGuide && <button type="button" onClick={() => setGuide(true)} style={{ background: 'none', border: 'none', color: 'var(--red)', cursor: 'pointer', fontSize: 12, fontWeight: 600, textTransform: 'none', letterSpacing: 0, fontFamily: 'inherit' }}>📏 Size guide</button>}
+                      {hasGuide && <button type="button" onClick={() => setGuide(true)} style={{ background: 'none', border: 'none', color: 'var(--red-text)', cursor: 'pointer', fontSize: 12, fontWeight: 600, textTransform: 'none', letterSpacing: 0, fontFamily: 'inherit' }}>📏 Size guide</button>}
                     </span>
                   </legend>
                   <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
@@ -140,20 +147,20 @@ export default function Product() {
 
                 <div style={{ display: 'grid', gap: '10px', marginTop: '8px', maxWidth: '360px' }}>
                   {allSoldOut ? (
-                    <button type="button" className="btn-ghost" disabled style={{ justifyContent: 'center' }}>Sold out</button>
+                    <button type="button" className="btn-ghost" disabled style={{ justifyContent: 'center' }}>{t('Sold out')}</button>
                   ) : (
                     <>
-                      <button type="button" className="btn-primary" style={{ justifyContent: 'center' }} onClick={() => add(false)}>Add to bag</button>
-                      <button type="button" className="btn-ghost" style={{ justifyContent: 'center' }} onClick={() => add(true)}>Buy now</button>
+                      <button type="button" className="btn-primary" style={{ justifyContent: 'center' }} onClick={() => add(false)}>{pre ? t('Pre-order · add to bag') : t('Add to bag')}</button>
+                      <button type="button" className="btn-ghost" style={{ justifyContent: 'center' }} onClick={() => add(true)}>{t('Buy now')}</button>
                     </>
                   )}
                 </div>
                 {stock && <NotifyMe productId={product.id} soldOut={sizesOf(product).filter(sz => left(sz) <= 0)} />}
                 <PincodeCheck />
                 <ul style={{ listStyle: 'none', fontSize: '12px', color: 'var(--muted)', display: 'grid', gap: '4px' }}>
-                  <li>Ships from Shonowear in {STORE.deliveryEstimate}</li>
+                  <li>{pre ? `Pre-order: ships by ${prettyDate(pre)}` : `Ships from Shonowear in ${STORE.deliveryEstimate}`}</li>
                   <li>{STORE.shippingFee ? `Free shipping over ${inr(STORE.freeShippingOver)}` : 'Free shipping'}</li>
-                  <li>{STORE.returnDays}-day returns · <Link to="/policies/returns" style={{ color: 'var(--red)' }}>policy</Link></li>
+                  <li>{STORE.returnDays}-day returns · <Link to="/policies/returns" style={{ color: 'var(--red-text)' }}>policy</Link></li>
                 </ul>
               </>
             ) : (
@@ -179,14 +186,23 @@ export default function Product() {
 
         {own && !allSoldOut && (
           <div className="buybar" style={{ alignItems: 'center', gap: 12 }}>
-            <div style={{ lineHeight: 1.2 }}><strong style={{ fontSize: 18 }}>{inr(product.price)}</strong><div style={{ fontSize: 11, color: 'var(--muted)' }}>{size ? `Size ${size}` : 'Select a size'}</div></div>
-            <button type="button" className="btn-primary" style={{ flex: 1 }} onClick={() => { if (!size) { setSizeError(true); window.scrollTo({ top: 200, behavior: 'smooth' }); } else add(false); }}>Add to bag</button>
+            <div style={{ lineHeight: 1.2 }}><strong style={{ fontSize: 18 }}>{inr(unitPrice(product))}</strong><div style={{ fontSize: 11, color: 'var(--muted)' }}>{size ? `Size ${size}` : 'Select a size'}</div></div>
+            <button type="button" className="btn-primary" style={{ flex: 1 }} onClick={() => { if (!size) { setSizeError(true); window.scrollTo({ top: 200, behavior: 'smooth' }); } else add(false); }}>{pre ? 'Pre-order' : 'Add to bag'}</button>
           </div>
+        )}
+
+        {curated.length > 0 && (
+          <section style={{ marginBottom: '40px' }} aria-label="Worn in these looks">
+            <div className="eyebrow" style={{ marginBottom: '12px' }}>Worn in these looks</div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {curated.map(l => <Link key={l.slug} to={`/looks/${l.slug}`} style={{ border: '1px solid var(--border2)', borderRadius: 20, padding: '8px 14px', fontSize: 13 }}>{l.title} →</Link>)}
+            </div>
+          </section>
         )}
 
         {looks.length > 0 && (
           <section style={{ marginBottom: '56px' }}>
-            <div className="eyebrow" style={{ marginBottom: '16px' }}>Complete the look</div>
+            <div className="eyebrow" style={{ marginBottom: '16px' }}>{t('Complete the look')}</div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px' }}>
               {looks.map((look, i) => (
                 <div key={i} style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: '8px', padding: '16px' }}>
@@ -211,12 +227,13 @@ export default function Product() {
 
         {similar.length > 0 && (
           <section style={{ marginBottom: '64px' }}>
-            <div className="eyebrow" style={{ marginBottom: '16px' }}>You may also like</div>
+            <div className="eyebrow" style={{ marginBottom: '16px' }}>{t('You may also like')}</div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '16px' }}>
               {similar.map(p => <ProductCard key={p.id} product={p} />)}
             </div>
           </section>
         )}
+        {own && <ProductSocial productId={product.id} />}
         <RecentlyViewed exclude={product.id} />
       </div>
       {guide && <SizeGuide product={product} onClose={() => setGuide(false)} onPick={(sz) => { setSize(sz); setSizeError(false); setQty(q => Math.min(q, Math.max(1, left(sz)))); }} />}

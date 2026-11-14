@@ -15,15 +15,15 @@ export default function PincodeCheck() {
     if (r.ok) { try { localStorage.setItem(KEY, pin.trim()); } catch { /* ignore */ } }
   };
   return (
-    <form onSubmit={check} style={{ display: 'grid', gap: 8 }} aria-label="Delivery estimate">
+    <form onSubmit={check} style={{ display: 'grid', gap: 8, minWidth: 0 }} aria-label="Delivery estimate">
       <label htmlFor="pin" style={{ fontSize: 12, fontWeight: 600 }}>Check delivery</label>
-      <div style={{ display: 'flex', gap: 8, maxWidth: 320 }}>
+      <div style={{ display: 'flex', gap: 8, maxWidth: 320, minWidth: 0 }}>
         <input id="pin" inputMode="numeric" autoComplete="postal-code" maxLength={6} placeholder="Enter pincode" value={pin} onChange={e => setPin(e.target.value.replace(/\D/g, ''))}
           style={{ flex: 1, minWidth: 0, background: 'var(--bg2)', color: 'var(--text)', border: '1px solid var(--border2)', borderRadius: 8, padding: '10px 12px', fontSize: 14, fontFamily: 'inherit' }} />
         <button type="submit" className="btn-ghost" style={{ padding: '10px 16px' }}>Check</button>
       </div>
       <div role="status" style={{ fontSize: 13 }}>
-        {res && !res.ok && <span style={{ color: 'var(--red)' }}>{res.error}</span>}
+        {res && !res.ok && <span style={{ color: 'var(--red-text)' }}>{res.error}</span>}
         {res?.ok && <span>Estimated delivery <strong>{res.label}</strong>{res.remote ? ' (remote area: a little longer)' : ''}. {STORE.freeShippingOver ? `Free shipping over ${inr(STORE.freeShippingOver)}.` : ''}<br /><span style={{ color: 'var(--muted)', fontSize: 11 }}>An estimate: the courier confirms the exact date once shipped.</span></span>}
       </div>
     </form>

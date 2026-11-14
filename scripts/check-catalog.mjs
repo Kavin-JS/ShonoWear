@@ -32,6 +32,11 @@ for (const p of catalog) {
   if (p.addedAt !== undefined && !(/^\d{4}-\d{2}-\d{2}$/.test(p.addedAt) && !Number.isNaN(Date.parse(p.addedAt)))) w('addedAt must be YYYY-MM-DD');
   if (p.colorGroup !== undefined && (typeof p.colorGroup !== 'string' || !p.colorGroup)) w('colorGroup must be a non-empty string');
   if (p.sizeChart !== undefined && !(['tops', 'bottoms', 'footwear'].includes(p.sizeChart) || (p.sizeChart && typeof p.sizeChart === 'object' && p.sizeChart.rows && Array.isArray(p.sizeChart.columns)))) w('sizeChart must be tops|bottoms|footwear or { columns, rows }');
+  if (p.preorder !== undefined) {
+    const d = p.preorder && p.preorder.shipsOn;
+    if (p.fulfilment !== 'own') w('preorder is only for products we ship');
+    else if (!(/^\d{4}-\d{2}-\d{2}$/.test(d || '') && !Number.isNaN(Date.parse(d)))) w('preorder.shipsOn must be YYYY-MM-DD');
+  }
   if (p.mrp !== undefined && (!Number.isInteger(p.mrp) || p.mrp <= p.price)) w('mrp must be an integer above the price (or remove it)');
 }
 

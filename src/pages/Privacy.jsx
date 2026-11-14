@@ -27,7 +27,7 @@ export default function Privacy() {
             lineHeight: 0.95, marginTop: '20px',
           }}>
             PRIVACY{' '}
-            <em style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--red)', fontStyle: 'italic' }}>
+            <em style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--red-text)', fontStyle: 'italic' }}>
               Policy
             </em>
           </h1>
@@ -53,8 +53,20 @@ export default function Privacy() {
             <li><strong style={{ color: 'var(--text)', fontWeight: 500 }}>Orders</strong> — if you buy an item we ship, we store your name, phone number, email, delivery address, the items and amounts, and the payment reference. We use it only to take payment, deliver your order, send order emails, handle returns and meet tax and legal obligations. Order records are kept for as long as the law requires.</li>
             <li>Email address — only if the newsletter box is shown and you submit it. It goes to our form provider.</li>
             <li><strong style={{ color: 'var(--text)', fontWeight: 500 }}>Back-in-stock alerts</strong> — if you ask to be told when a size returns, we store your email, the product and size. We use it only to send that one alert and then remove it. Your recently viewed items and delivery pincode stay in your browser and are not sent to us until you check delivery, and the pincode is not stored.</li>
-            <li>Analytics — page views and button clicks through Vercel Web Analytics, which does not use cookies.</li>
+            <li>Visit counts — we keep anonymous totals (for example how many times a page or product was viewed, and how many people added to the bag) on our own server. They contain no name, email, IP address or cookie and cannot be tied back to you. If your browser sends Do Not Track or Global Privacy Control, nothing is counted.</li>
           </ul>
+        </Section>
+
+        <Section title="Saved addresses, bag reminders, referrals and gift cards">
+          <p>Saved addresses stay in your browser's localStorage on your device; we never receive them until you place an order. If you tick "remind me" at checkout, we keep your email and bag for up to {STORE.abandonedBag?.maxDays} days and send at most one reminder, then delete the bag. Withdraw consent any time by emailing us. Referral and gift-card codes are stored with a hash of the email address they relate to, so we can enforce one-per-customer rules and check balances. Coupon use is tracked against hashed email and phone, not in plain text.</p>
+        </Section>
+
+        <Section title="Accounts, reviews and questions">
+          <p>If you sign in, we keep your email address, a hashed index of your orders, and a sign-in cookie (HttpOnly, strictly for keeping you signed in, {STORE.accounts?.sessionDays} days). There is no password. A review shows your first name and last initial and "verified buyer"; never your email. Questions you ask are shown with your first name once we answer them. You can ask us to delete your reviews, questions or account data at any time. Return and exchange requests are kept with the order for our records and tax purposes.</p>
+        </Section>
+
+        <Section title="Offer emails">
+          <p>Only if you tick "Email me new drops and offers" at checkout, we keep your name, email and the time you agreed, and may send you offers. Every email has an unsubscribe link; after you use it we do not send you offers again unless you tick the box on a later order. Order and delivery emails are separate and are not affected. Invoices are generated from your order and kept for our tax records.</p>
         </Section>
 
         <Section title="Affiliate links">
@@ -67,11 +79,10 @@ export default function Privacy() {
 
         <Section title="Third-party services">
           <ul style={{ paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <li><strong style={{ color: 'var(--text)', fontWeight: 500 }}>Vercel</strong> — hosts the application and provides analytics. See <a href="https://vercel.com/legal/privacy-policy" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--red)' }}>Vercel's Privacy Policy</a>.</li>
+            <li><strong style={{ color: 'var(--text)', fontWeight: 500 }}>Vercel</strong> — hosts the application. See <a href="https://vercel.com/legal/privacy-policy" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--red-text)' }}>Vercel's Privacy Policy</a>.</li>
             <li><strong style={{ color: 'var(--text)', fontWeight: 500 }}>Razorpay</strong> — processes payments. Card, UPI and bank details are entered in Razorpay's window and never reach us. See Razorpay's privacy policy.</li>
             <li><strong style={{ color: 'var(--text)', fontWeight: 500 }}>Upstash</strong> — database where we keep order records and rate-limit counters (stored as hashed IPs).</li>
             <li><strong style={{ color: 'var(--text)', fontWeight: 500 }}>Resend</strong> — sends order confirmation emails.</li>
-            <li><strong style={{ color: 'var(--text)', fontWeight: 500 }}>Google Fonts</strong> — loads display fonts. Google may log font requests.</li>
           </ul>
         </Section>
 
@@ -93,7 +104,7 @@ export default function Privacy() {
         </Section>
 
         <Section title="Contact">
-          Questions? Email us at <a href={`mailto:${STORE.supportEmail}`} style={{ color: 'var(--red)' }}>{STORE.supportEmail}</a>.
+          Questions? Email us at <a href={`mailto:${STORE.supportEmail}`} style={{ color: 'var(--red-text)' }}>{STORE.supportEmail}</a>.
         </Section>
       </div>
     </main>

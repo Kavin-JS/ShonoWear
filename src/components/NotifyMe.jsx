@@ -34,7 +34,7 @@ export default function NotifyMe({ productId, soldOut }) {
             <input name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" style={{ position: 'absolute', left: '-9999px' }} />
             <button type="submit" className="btn-ghost" disabled={state.busy}>{state.busy ? '…' : 'Notify me'}</button>
           </div>
-          {state.msg && <div role="alert" style={{ color: 'var(--red)', fontSize: 12 }}>{state.msg}</div>}
+          {state.msg && <div role="alert" style={{ color: 'var(--red-text)', fontSize: 12 }}>{state.msg}</div>}
           <div style={{ fontSize: 11, color: 'var(--muted2)' }}>One email about this item, then we delete your address from the list.</div>
         </>
       )}

@@ -187,7 +187,7 @@ export default function Results() {
             lineHeight: 0.95, marginBottom: '16px',
           }}>
             YOUR {outfits.length}<br />
-            <em style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--red)', fontStyle: 'italic' }}>
+            <em style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--red-text)', fontStyle: 'italic' }}>
               Curated Looks
             </em>
           </h1>
@@ -203,7 +203,7 @@ export default function Results() {
               ].filter(Boolean).map(tag => (
                 <span key={tag} style={{
                   fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase',
-                  color: 'var(--red)', background: 'var(--red-dim)',
+                  color: 'var(--red-text)', background: 'var(--red-dim)',
                   border: '1px solid rgba(232,21,58,0.2)', padding: '4px 12px', borderRadius: '2px',
                 }}>
                   {tag}

@@ -4,25 +4,33 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && node scripts/gen-sitemap.mjs",
+    "build": "vite build && node scripts/prerender.mjs && node scripts/gen-sitemap.mjs",
     "preview": "vite preview",
     "test": "vitest run",
     "check:catalog": "node scripts/check-catalog.mjs",
     "check:launch": "node scripts/check-launch.mjs",
     "verify": "npm test && npm run check:catalog && npm run build",
-    "build:pages": "vite build && node scripts/gen-sitemap.mjs && cp dist/index.html dist/404.html",
-    "e2e": "node e2e/run.mjs && node e2e/sectionA.mjs",
+    "build:pages": "vite build && node scripts/prerender.mjs && node scripts/gen-sitemap.mjs && cp dist/index.html dist/404.html",
+    "e2e": "node e2e/run.mjs && node e2e/sectionA.mjs && node e2e/sectionB.mjs && node e2e/sectionC.mjs && node e2e/sectionD.mjs && node e2e/sectionE.mjs && node e2e/sectionF.mjs && node e2e/sectionG.mjs && node e2e/sectionH.mjs",
     "dev:api": "node scripts/dev-server.mjs",
-    "serve": "node scripts/dev-server.mjs"
+    "serve": "node scripts/dev-server.mjs",
+    "import:products": "node scripts/import-products.mjs",
+    "photos": "node scripts/optimize-images.mjs"
   },
   "dependencies": {
+    "@fontsource/bebas-neue": "5.3.0",
+    "@fontsource/dm-serif-display": "5.3.0",
+    "@fontsource/noto-sans-devanagari": "5.3.0",
+    "@fontsource/poppins": "5.3.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.26.2",
     "three": "0.169.0"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.14.0",
     "@vitejs/plugin-react": "^4.3.1",
+    "sharp": "0.35.5",
     "vite": "^5.4.8",
     "vitest": "^2.1.9"
   },
