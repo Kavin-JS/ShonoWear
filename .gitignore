@@ -4,3 +4,5 @@ dist/
 .env.local
 .vercel/
 backups/
+.vercel
+.env*
